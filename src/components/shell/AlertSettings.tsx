@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, CloudRain, LocateFixed, MessageSquareText, ShieldCheck } from "lucide-react";
+import { Bell, BellRing, LocateFixed, ShieldCheck } from "lucide-react";
 import { useLocations } from "@/components/providers/LocationsProvider";
 import { useAlertPreferences } from "@/components/providers/AlertPreferencesProvider";
 import { Popover } from "@/components/ui/Popover";

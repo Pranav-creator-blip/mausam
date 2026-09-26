@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/alerts/route": "/api/alerts",
+  "/api/geocode/route": "/api/geocode",
+  "/api/air-quality/route": "/api/air-quality",
+  "/api/grid/route": "/api/grid",
+  "/api/sms/route": "/api/sms",
+  "/api/weather/route": "/api/weather",
+  "/api/radar/route": "/api/radar",
+  "/page": "/"
+}

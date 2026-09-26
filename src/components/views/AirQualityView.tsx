@@ -106,6 +106,43 @@ export function AirQualityView() {
   }, [airHours, now]);
 
   const availableForecast = airHours.length - startIndex;
+  const rangeCount = range === "24" ? 24 : range === "48" ? 48 : 72;
+  const rangeHours = airHours.slice(startIndex, startIndex + Math.min(rangeCount, Math.max(availableForecast, 0)));
+  const chartData = useMemo<AirChartPoint[]>(() => {
+    const points = rangeHours.map((hour) => {
+      const value = scale === "us" ? hour.usAqi : hour.europeanAqi;
+      return {
+        label: shortHourLabel(hour.epoch, tz, true),
+        date: dateLabel(hour.epoch, tz),
+        epoch: hour.epoch,
+        observed: !hour.isForecast,
+        value,
+        valueObs: hour.isForecast ? null : value,
+        valueFc: hour.isForecast ? value : null,
+        pm25: hour.pm25,
+      };
+    });
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const point = points[index];
+      if (point.observed && !previous.observed) {
+        previous.valueObs = point.valueObs;
+      }
+      if (!point.observed && previous.observed) {
+        previous.valueFc = point.valueFc;
+      }
+    }
+    return points;
+  }, [rangeHours, scale, tz]);
+
+  const peak = useMemo(() => {
+    let best: AirChartPoint | null = null;
+    for (const point of chartData) {
+      if (point.value === null) continue;
+      if (!best || (best.value !== null && point.value > best.value)) best = point;
+    }
+    return best;
+  }, [chartData]);
 
   if (air.loading && !air.data) {
     return (
@@ -155,45 +192,6 @@ export function AirQualityView() {
   const progress = aqiNow === null ? null : aqiProgress(aqiNow, scale);
   const bands = aqiBands(scale);
   const otherAqi = readCurrent(scale === "us" ? "european_aqi" : "us_aqi");
-
-  const rangeCount = range === "24" ? 24 : range === "48" ? 48 : 72;
-  const rangeHours = airHours.slice(startIndex, startIndex + Math.min(rangeCount, Math.max(availableForecast, 0)));
-
-  const chartData = useMemo<AirChartPoint[]>(() => {
-    const points = rangeHours.map((hour) => {
-      const value = scale === "us" ? hour.usAqi : hour.europeanAqi;
-      return {
-        label: shortHourLabel(hour.epoch, tz, true),
-        date: dateLabel(hour.epoch, tz),
-        epoch: hour.epoch,
-        observed: !hour.isForecast,
-        value,
-        valueObs: hour.isForecast ? null : value,
-        valueFc: hour.isForecast ? value : null,
-        pm25: hour.pm25,
-      };
-    });
-    for (let index = 1; index < points.length; index += 1) {
-      const previous = points[index - 1];
-      const point = points[index];
-      if (point.observed && !previous.observed) {
-        previous.valueObs = point.valueObs;
-      }
-      if (!point.observed && previous.observed) {
-        previous.valueFc = point.valueFc;
-      }
-    }
-    return points;
-  }, [rangeHours, scale, tz]);
-
-  const peak = useMemo(() => {
-    let best: AirChartPoint | null = null;
-    for (const point of chartData) {
-      if (point.value === null) continue;
-      if (!best || (best.value !== null && point.value > best.value)) best = point;
-    }
-    return best;
-  }, [chartData]);
 
   const pollutants: PollutantRow[] = POLLUTANTS.map((info) => {
     const value = readCurrent(info.key);

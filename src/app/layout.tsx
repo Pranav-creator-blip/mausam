@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 
