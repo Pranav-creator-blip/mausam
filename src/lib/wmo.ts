@@ -46,6 +46,7 @@ export type SceneVariant =
   | "heavy-rain"
   | "thunderstorm"
   | "snow"
+  | "sleet"
   | "unknown";
 
 type CodeMeta = {

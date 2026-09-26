@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Bookmark, BookmarkCheck, Crosshair, Loader2, RefreshCw, X } from "lucide-react";
 import { useLocations } from "@/components/providers/LocationsProvider";
+import { AlertSettings } from "@/components/shell/AlertSettings";
 import { SavedPlaces } from "@/components/shell/SavedPlaces";
 import { UnitSettings } from "@/components/shell/UnitSettings";
 import { InfoHint } from "@/components/ui/Controls";
@@ -63,6 +64,7 @@ export function PlaceHeader({
           </button>
 
           <SavedPlaces />
+          <AlertSettings />
           <UnitSettings />
 
           <button

@@ -33,4 +33,6 @@ export const STORAGE_KEYS = {
   units: "aether.units",
   mapLayers: "aether.map-layers",
   aqiScale: "aether.aqi-scale",
+  alertPrefs: "aether.alert-prefs",
+  alertHistory: "aether.alert-history",
 } as const;

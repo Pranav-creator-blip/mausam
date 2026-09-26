@@ -15,6 +15,8 @@ import { ForecastView } from "@/components/views/ForecastView";
 import { MapView } from "@/components/views/MapView";
 import { OverviewView } from "@/components/views/OverviewView";
 import { WeatherBackground } from "@/components/weather/WeatherBackground";
+import { useNetworkOnline } from "@/lib/appearance";
+import { OfflineNotice } from "@/components/ui/States";
 import { weatherIntensity, sceneVariant } from "@/lib/wmo";
 
 function ViewBody({ view }: { view: ViewId }) {
@@ -35,6 +37,7 @@ function ViewBody({ view }: { view: ViewId }) {
 export function AppShell() {
   const { hydrated } = useLocations();
   const { place, view, setView, current, weather, refreshAll, refreshing, alerts } = useDashboard();
+  const online = useNetworkOnline();
   const [drawer, setDrawer] = useState(false);
   const reduced = useReducedMotion();
 
@@ -142,6 +145,8 @@ export function AppShell() {
               <Onboarding />
             ) : (
               <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-5">
+                {!online ? <OfflineNotice onRetry={refreshAll} /> : null}
+
                 <PlaceHeader
                   place={place}
                   timeZoneLabel={weather.data?.timezone_abbreviation ?? weather.data?.timezone ?? null}

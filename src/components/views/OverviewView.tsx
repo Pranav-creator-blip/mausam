@@ -13,6 +13,7 @@ import {
   Thermometer,
   Wind,
 } from "lucide-react";
+import { useAlertPreferences } from "@/components/providers/AlertPreferencesProvider";
 import { useDashboard } from "@/components/providers/DashboardProvider";
 import { useUnits } from "@/components/providers/UnitsProvider";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +26,7 @@ import { peakIndex, precipitationType, currentHourIndex } from "@/lib/forecast";
 import { dayLabel, dateLabel, durationLabel, hourLabel, isSameZoneDay, shortHourLabel } from "@/lib/time";
 import { beaufort, compassPoint, formatNumber, humidityBand, uvBand, visibilityBand } from "@/lib/units";
 import { conditionLabel, iconVariant } from "@/lib/wmo";
+import { getRainAlertSummary } from "@/lib/weather-alerts";
 
 const TONE_COLORS: Record<string, string> = {
   emerald: "#7ee0b0",
@@ -36,6 +38,7 @@ const TONE_COLORS: Record<string, string> = {
 
 export function OverviewView() {
   const { weather, air, alerts, current, hours, days, timeZone, place, setView } = useDashboard();
+  const { prefs, history } = useAlertPreferences();
   const { units, convert, symbol } = useUnits();
 
   if (weather.loading && !weather.data) {
@@ -90,9 +93,22 @@ export function OverviewView() {
       : null;
 
   const airCurrent = air.data?.current ?? null;
-  const airBands = aqiBand(airCurrent?.european_aqi ?? null, "european");
+  const airBand = aqiBand(airCurrent?.european_aqi ?? null, "european");
   const airProgress = airCurrent?.european_aqi != null ? aqiProgress(airCurrent.european_aqi, "european") : null;
   const topAlert = alerts.data?.alerts?.[0] ?? null;
+  const rainSummary = getRainAlertSummary(hours, now, prefs.rainThreshold);
+  const currentWeatherCode = current.weatherCode ?? -1;
+  const currentPrecipitation = current.precipitation ?? 0;
+  const weatherStatus = [
+    { label: "Clear", active: currentWeatherCode >= 0 && currentWeatherCode <= 2, tone: "cyan" },
+    { label: "Cloudy", active: currentWeatherCode >= 3 && currentWeatherCode <= 48, tone: "iris" },
+    { label: "Rain", active: currentWeatherCode >= 51 || currentPrecipitation > 0, tone: "cyan" },
+    { label: "Thunderstorm", active: currentWeatherCode >= 95, tone: "coral" },
+    { label: "Fog", active: current.visibility !== null && current.visibility < 1000, tone: "amber" },
+    { label: "Windy", active: (current.windSpeed ?? 0) > 25, tone: "mint" },
+    { label: "Hot", active: (current.temperature ?? 0) >= 30, tone: "coral" },
+    { label: "Cold", active: (current.temperature ?? 0) <= 5, tone: "amber" },
+  ];
 
   const temp = convert.temp(current.temperature);
   const high = today ? convert.temp(today.tempMax) : null;
@@ -176,6 +192,46 @@ export function OverviewView() {
       <Reveal delay={0.05}>
         <Panel>
           <PanelHeader
+            title="Rain alert"
+            icon={<CloudRain className="h-4 w-4" />}
+            subtitle="Rain risk modelled from the next few hours of the forecast."
+          />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-cyan/35 bg-cyan/10 px-3 py-2">
+              <div>
+                <p className="text-[10px] font-semibold tracking-[0.14em] text-cyan uppercase">Status</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{rainSummary.alertMessage}</p>
+              </div>
+              <span className="tnum rounded-full border border-cyan/50 bg-white/[0.04] px-2 py-1 text-[11px] font-semibold text-cyan">
+                {rainSummary.maxProbability}%
+              </span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="glass-soft rounded-2xl px-2.5 py-2">
+                <p className="muted-dim text-[10px] font-semibold tracking-[0.1em] uppercase">Next rain</p>
+                <p className="tnum mt-1 text-sm font-semibold text-ink">
+                  {rainSummary.nextRainMinutes === null ? "—" : `${rainSummary.nextRainMinutes} min`}
+                </p>
+              </div>
+              <div className="glass-soft rounded-2xl px-2.5 py-2">
+                <p className="muted-dim text-[10px] font-semibold tracking-[0.1em] uppercase">Today</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{rainSummary.rainExpectedToday ? "Yes" : "No"}</p>
+              </div>
+              <div className="glass-soft rounded-2xl px-2.5 py-2">
+                <p className="muted-dim text-[10px] font-semibold tracking-[0.1em] uppercase">Heavy rain</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{rainSummary.heavyRainPossible ? "Possible" : "Unlikely"}</p>
+              </div>
+            </div>
+          </div>
+          <SourceNote>
+            Threshold: {prefs.rainThreshold}% · expected rainfall in the next 24 hours: {formatNumber(rainSummary.expectedRainMm, 1)} {symbol.precip}
+          </SourceNote>
+        </Panel>
+      </Reveal>
+
+      <Reveal delay={0.08}>
+        <Panel>
+          <PanelHeader
             title="Sun cycle"
             icon={<Sunrise className="h-4 w-4" />}
             subtitle={today ? `${dayLabel(today.epoch, timeZone ?? undefined, "long")} · ${dateLabel(today.epoch, timeZone ?? undefined)}` : undefined}
@@ -200,7 +256,7 @@ export function OverviewView() {
         </Panel>
       </Reveal>
 
-      <Reveal delay={0.08} className="lg:col-span-2">
+      <Reveal delay={0.11} className="lg:col-span-2">
         <Panel>
           <PanelHeader
             title="Atmospheric detail"
@@ -286,6 +342,27 @@ export function OverviewView() {
 
       <Reveal delay={0.11}>
         <Panel>
+          <PanelHeader title="Weather status" icon={<CloudRain className="h-4 w-4" />} subtitle="Quick status summary for this place." />
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {weatherStatus.map((status) => (
+              <div
+                key={status.label}
+                className={`rounded-2xl border px-2.5 py-2 text-left transition ${
+                  status.active
+                    ? "border-cyan/35 bg-cyan/10 text-cyan"
+                    : "border-line bg-white/[0.02] text-ink-soft"
+                }`}
+              >
+                <p className="text-[10px] font-semibold tracking-[0.1em] uppercase">{status.label}</p>
+                <p className="mt-1 text-[11px] font-medium">{status.active ? "Active" : "Not active"}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </Reveal>
+
+      <Reveal delay={0.14}>
+        <Panel>
           <PanelHeader
             title="Air quality"
             icon={<Wind className="h-4 w-4" />}
@@ -304,25 +381,25 @@ export function OverviewView() {
             </div>
           ) : air.error && !air.data ? (
             <ErrorState compact title="Air quality unavailable" message={air.error} onRetry={air.refresh} />
-          ) : airBands ? (
+          ) : airBand ? (
             <div>
               <div className="flex items-end gap-3">
-                <p className="tnum text-[38px] leading-none font-semibold" style={{ color: airBands.band.color }}>
+                <p className="tnum text-[38px] leading-none font-semibold" style={{ color: airBand.color }}>
                   {formatNumber(airCurrent?.european_aqi, 0)}
                 </p>
                 <div className="pb-1">
-                  <p className="text-sm font-semibold" style={{ color: airBands.band.color }}>
-                    {airBands.band.label}
+                  <p className="text-sm font-semibold" style={{ color: airBand.color }}>
+                    {airBand.label}
                   </p>
-                  <p className="muted-dim text-[10.5px]">{airBands.scale.label}</p>
+                  <p className="muted-dim text-[10.5px]">European AQI</p>
                 </div>
               </div>
               {airProgress !== null ? (
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
-                  <div className="h-full rounded-full" style={{ width: `${airProgress}%`, background: airBands.band.color }} />
+                  <div className="h-full rounded-full" style={{ width: `${airProgress}%`, background: airBand.color }} />
                 </div>
               ) : null}
-              <p className="muted mt-3 text-[11px] leading-relaxed">{airBands.band.guidance}</p>
+              <p className="muted mt-3 text-[11px] leading-relaxed">{airBand.guidance}</p>
             </div>
           ) : (
             <p className="muted text-xs">No AQI value was returned for these coordinates.</p>
@@ -331,7 +408,31 @@ export function OverviewView() {
         </Panel>
       </Reveal>
 
-      <Reveal delay={0.14} className="lg:col-span-3">
+      <Reveal delay={0.17} className="lg:col-span-3">
+        <Panel>
+          <PanelHeader title="Alert history" icon={<CloudRain className="h-4 w-4" />} subtitle="Recent rain and weather notifications for this browser." />
+          {history.length === 0 ? (
+            <p className="muted text-xs">No alerts have been generated yet. The app stores recent notifications locally on this device.</p>
+          ) : (
+            <div className="grid gap-2">
+              {history.slice(0, 5).map((entry) => (
+                <div key={entry.id} className="flex items-start justify-between gap-3 rounded-2xl border border-line bg-white/[0.02] px-3 py-2">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-soft">{entry.type.replace("-", " ")}</p>
+                    <p className="mt-1 text-xs text-ink-soft">{entry.message}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="tnum text-[10px] text-muted">{entry.date}</p>
+                    <p className="tnum text-[10px] text-muted">{entry.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+      </Reveal>
+
+      <Reveal delay={0.20} className="lg:col-span-3">
         <Panel>
           <PanelHeader
             title="Next 24 hours"

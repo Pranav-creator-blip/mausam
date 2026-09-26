@@ -17,6 +17,7 @@ const SNOW_SCENES: SceneVariant[] = ["snow", "sleet"];
 const CLOUD_SCENES: SceneVariant[] = ["partly-day", "partly-night", "overcast", "fog"];
 
 export function WeatherBackground({ scene, intensity = 0.5 }: { scene: SceneVariant; intensity?: number }) {
+  const isCloudy = CLOUD_SCENES.includes(scene);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const reduced = usePrefersReducedMotion();
@@ -38,7 +39,6 @@ export function WeatherBackground({ scene, intensity = 0.5 }: { scene: SceneVari
 
     const isRain = RAIN_SCENES.includes(scene);
     const isSnow = SNOW_SCENES.includes(scene);
-    const isCloudy = CLOUD_SCENES.includes(scene);
     const targetCount = isRain ? Math.round(90 * intensity + 40) : isSnow ? Math.round(70 * intensity + 30) : 0;
 
     const resize = () => {

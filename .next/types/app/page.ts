@@ -1,4 +1,4 @@
-// File: C:\Users\adity\Downloads\aether-weather-starter\src\app\page.tsx
+// File: D:\adi bhai rockzz\example\src\app\page.tsx
 import * as entry from '../../../src/app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

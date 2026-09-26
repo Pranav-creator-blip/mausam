@@ -56,10 +56,55 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/air-quality/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/air-quality">> = Specific
+  const handler = {} as typeof import("../../src/app/api/air-quality/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/alerts/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/alerts">> = Specific
+  const handler = {} as typeof import("../../src/app/api/alerts/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/geocode/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/geocode">> = Specific
   const handler = {} as typeof import("../../src/app/api/geocode/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/grid/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/grid">> = Specific
+  const handler = {} as typeof import("../../src/app/api/grid/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/radar/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/radar">> = Specific
+  const handler = {} as typeof import("../../src/app/api/radar/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/sms/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/sms">> = Specific
+  const handler = {} as typeof import("../../src/app/api/sms/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
